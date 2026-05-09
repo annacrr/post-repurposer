@@ -61,7 +61,7 @@ This is a tool I could actually use when creating content for social media, port
 |---|---|
 | Python | Core app logic |
 | Streamlit | Interactive web interface |
-| Claude API | AI content generation, prepared for later use |
+| Claude API | API-ready AI content generation |
 | python-dotenv | Environment variable management |
 | HTML/CSS | Custom styling inside Streamlit |
 
