@@ -22,6 +22,12 @@ The goal is to simulate a real content workflow and show how AI can support mark
 
 ---
 
+## Demo
+
+[![Watch the demo](https://img.youtube.com/vi/romPh6jWP0U/maxresdefault.jpg)](https://youtu.be/romPh6jWP0U)
+
+--
+
 ## ✨ What It Does
 
 Post Repurposer allows users to:

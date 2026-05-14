@@ -1,11 +1,13 @@
 import os
+import re
 import streamlit as st
 import streamlit.components.v1 as components
 from dotenv import load_dotenv
 from anthropic import Anthropic
 
 
-USE_API = False
+load_dotenv()
+USE_API = os.getenv("USE_API", "False").lower() == "true"
 
 
 def build_prompt(long_text, tone, selected_platforms):
@@ -72,56 +74,48 @@ Short, visual, warm, simple, and skimmable.
 It can be poetic, emotional, informative, or lifestyle-focused depending on the topic, but it should never feel heavy.
 
 Length:
-Short.
-Usually 3 to 6 short blocks.
-Each block should be 1 to 2 lines max.
+Very short. Maximum 4 lines of text total before the hashtags.
+Each line should be 1 sentence max.
+Less is more. Do not explain everything.
 
 Structure:
 Use line breaks between ideas.
-Start with a simple hook or emotional sentence.
-Then explain the product, idea, moment, or message clearly.
-Use relevant emojis that match the topic, mood, or visual identity.
-End with a soft closing, CTA, or final sentence that feels natural.
-
-Hashtags:
-Use a small number only when useful.
-Usually 3 to 8 hashtags max.
-Prefer relevant, specific hashtags over generic ones.
+Start with a punchy one-line hook.
+Add 2 to 3 short lines that build on it.
+End with one soft closing line or CTA.
+Then add 3 to 5 hashtags on a new line.
 
 Avoid:
-- Long captions with dense paragraphs.
+- More than 4 lines of caption text.
+- Long explanations.
 - Too many hashtags.
-- Random emojis that do not match the topic.
-- Sounding too corporate.
+- Sounding like LinkedIn.
 - Overexplaining.
-- Making it look like LinkedIn.
 
 TWITTER/X
 
 Tone:
-Direct, punchy, curious, and attention-grabbing.
-It can be informative, dramatic, funny, ironic, or thread-like depending on the goal.
+Direct, punchy, and intentional.
+Every word should earn its place.
 
 Length:
-Short to medium.
-For single tweets, keep it sharp and compact.
-For longer storytelling posts, use short lines and strong pacing.
+Short. Maximum 3 to 5 lines total.
+Think of it as a single sharp post, not a thread.
+It should feel complete in one read.
 
 Structure:
-Start with a strong hook.
-Use short sentences.
-Create curiosity quickly.
-Break lines often.
-For stories, build momentum with specific details, numbers, contrast, or surprising turns.
-For tips or insights, make the value clear fast.
+One strong opening line that hooks immediately.
+One or two lines that add context or punch.
+One closing line that lands the idea.
+No hashtags unless absolutely necessary.
 
 Avoid:
-- Sounding too polished or corporate.
-- Long intro context before the point.
-- Weak hooks.
+- Anything longer than 5 lines.
+- Threads.
 - Overexplaining.
-- Hashtags unless they are actually useful.
-- Making it feel like an Instagram caption or LinkedIn reflection.
+- Hashtags unless critical.
+- Sounding like Instagram or LinkedIn.
+- Weak or slow openings.
 
 Long-form content:
 \"\"\"
@@ -144,9 +138,34 @@ TWITTER/X:
 
 
 def generate_fake_posts():
-    linkedin_post = "LinkedIn output"
-    instagram_post = "Instagram output"
-    twitter_post = "Twitter/X output"
+    linkedin_post = """I didn't plan to spend my twenties like this.
+Navigating visa deadlines. Job rejections. Grocery stores where I don't recognize half the ingredients.
+
+But here I am — living in San Francisco, far from everyone I grew up with, trying to build something real in a city that moves faster than I sometimes can.
+
+Some days it feels like I'm exactly where I'm supposed to be.
+
+Other days I open my laptop and stare at the screen for twenty minutes before writing a single line.
+
+What I've learned is that consistency isn't about motivation. It's about showing up even when the outcome feels uncertain. Especially then.
+
+Anyone else building something far from home? Would love to hear how you keep showing up."""
+
+    instagram_post = """Far from home. Still showing up. 🌁
+
+Visa deadlines, job rejections, grocery stores I don't understand.
+
+But consistency isn't about feeling ready.
+
+It's about showing up anyway.
+
+#BuildingAbroad #SanFrancisco #ImmigrantLife"""
+
+    twitter_post = """Visa deadlines. Job rejections. A grocery store I still don't understand.
+
+But I show up every day anyway.
+
+Consistency isn't about motivation. It never was."""
 
     return {
         "LinkedIn": linkedin_post,
@@ -166,8 +185,8 @@ def generate_posts_with_claude(prompt):
     client = Anthropic(api_key=api_key)
 
     response = client.messages.create(
-        model="claude-sonnet-4-5-20250929",
-        max_tokens=1500,
+        model="claude-sonnet-4-5",
+        max_tokens=2500,
         messages=[
             {
                 "role": "user",
@@ -451,12 +470,12 @@ st.markdown(
         background-color: #fffefa;
         border: 1px solid #ded1c3;
         border-radius: 24px;
-        padding: 1.5rem 1.7rem;
+        padding: 0.8rem 1.7rem 1.5rem 1.7rem;
         font-family: 'Lora', Georgia, serif;
-        font-size: 17px;
-        line-height: 1.7;
+        font-size: 15px;
+        line-height: 1.5;
         color: #111827;
-        white-space: pre-wrap;
+        white-space: pre-line;
     }
 
     </style>
@@ -512,38 +531,41 @@ if generate_button:
     elif len(selected_platforms) == 0:
         st.warning("Please select at least one platform in Settings.")
     else:
-        try:
-            platform_outputs = generate_posts(long_text, tone, selected_platforms)
+        with st.spinner("Generating your posts..."):
+            try:
+                platform_outputs = generate_posts(long_text, tone, selected_platforms)
 
-            st.markdown('<div id="results-anchor" class="results-anchor"></div>', unsafe_allow_html=True)
-            st.markdown('<div class="results-title">Results</div>', unsafe_allow_html=True)
+                st.markdown('<div id="results-anchor" class="results-anchor"></div>', unsafe_allow_html=True)
+                st.markdown('<div class="results-title">Results</div>', unsafe_allow_html=True)
 
-            for index, platform in enumerate(selected_platforms):
-                divider_class = "platform-divider" if index < len(selected_platforms) - 1 else ""
-                output_text = platform_outputs.get(platform, "")
+                for index, platform in enumerate(selected_platforms):
+                    is_last = index == len(selected_platforms) - 1
+                    divider_class = "" if is_last else "platform-divider"
+                    output_text = platform_outputs.get(platform, "")
+                    output_text = re.sub(r'\n{3,}', '\n\n', output_text).strip()
 
-                st.markdown(
-                    f"""
-                    <div class="platform-section {divider_class}">
-                        <div class="platform-title">{platform}</div>
-                        <div class="output-card">{output_text}</div>
-                    </div>
+                    st.markdown(
+                        f"""
+                        <div class="platform-section {divider_class}">
+                            <div class="platform-title">{platform}</div>
+                            <div class="output-card">{output_text}</div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+
+                components.html(
+                    """
+                    <script>
+                        const results = window.parent.document.getElementById("results-anchor");
+                        if (results) {
+                            results.scrollIntoView({ behavior: "smooth", block: "start" });
+                        }
+                    </script>
                     """,
-                    unsafe_allow_html=True
+                    height=0
                 )
 
-            components.html(
-                """
-                <script>
-                    const results = window.parent.document.getElementById("results-anchor");
-                    if (results) {
-                        results.scrollIntoView({ behavior: "smooth", block: "start" });
-                    }
-                </script>
-                """,
-                height=0
-            )
-
-        except Exception as error:
-            st.error("Something went wrong while generating the posts.")
-            st.write(error)
+            except Exception as error:
+                st.error("Something went wrong while generating the posts.")
+                st.write(error)
